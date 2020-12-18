@@ -3,7 +3,6 @@ const Auth = require("../auth/auth-model");
 module.exports = (req, res, next) => {
   Auth.getByUsername(req.body.username)
     .then((username) => {
-      console.log(username);
       if (username.length !== 0) {
         next();
       } else {
