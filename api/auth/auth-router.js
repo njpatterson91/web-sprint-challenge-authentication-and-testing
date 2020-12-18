@@ -5,6 +5,7 @@ const freeUserName = require("../middleware/freeUserName");
 const jwt = require("jsonwebtoken");
 const { jwtSecret } = require("../secrets/secrets");
 const { validUserObject } = require("../middleware/validUserObject");
+const validUserName = require("../middleware/validUserName");
 
 router.post("/register", validUserObject, freeUserName, (req, res) => {
   /*
@@ -41,8 +42,7 @@ router.post("/register", validUserObject, freeUserName, (req, res) => {
   });
 });
 
-router.post("/login", (req, res) => {
-  res.end("implement login, please!");
+router.post("/login", validUserObject, validUserName, (req, res) => {
   /*
     IMPLEMENT
     You are welcome to build additional middlewares to help with the endpoint's functionality.
@@ -66,6 +66,29 @@ router.post("/login", (req, res) => {
     4- On FAILED login due to `username` not existing in the db, or `password` being incorrect,
       the response body should include a string exactly as follows: "invalid credentials".
   */
+  Auth.getByUsername(req.body.username).then((user) => {
+    if (bcryptjs.compareSync(req.body.password, user[0].password)) {
+      const token = makeToken(user[0]);
+      res.status(200).json({
+        message: "Welcome to our API, " + user[0].username,
+        token,
+      });
+    } else {
+      res.status(401).json("invalid credentials");
+    }
+  });
 });
+
+function makeToken(user) {
+  // we use a lib called jsonwebtoken
+  const payload = {
+    subject: user.id,
+    username: user.username,
+  };
+  const options = {
+    expiresIn: "900s",
+  };
+  return jwt.sign(payload, jwtSecret, options);
+}
 
 module.exports = router;
